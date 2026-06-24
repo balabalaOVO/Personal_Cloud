@@ -1,6 +1,3 @@
-#文件
-AI 个人云盘 MVP 文档.md
-
 # ===== 操作系统生成文件 =====
 .DS_Store
 .DS_Store?
@@ -64,8 +61,13 @@ target/
 .env
 .env.local
 .env.*.local
+
+# ===== SSL 证书 & 密钥（绝对不能上传） =====
 *.pem
 *.key
+*.crt
+*.csr
+*.srl
 secrets/
 credentials/
 
@@ -96,6 +98,10 @@ temp/
 models/
 
 # ===== 文件上传 & 用户数据目录 =====
+data/
 uploads/
 user_data/
 storage/
+
+# ===== 前端构建产物 =====
+frontend/dist/
