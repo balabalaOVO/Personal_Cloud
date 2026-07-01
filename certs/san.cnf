@@ -19,5 +19,5 @@ subjectAltName = @alt_names
 DNS.1 = clouddrive.local
 DNS.2 = localhost
 IP.1 = 127.0.0.1
-IP.2 = 192.168.97.63
+IP.2 = 192.168.170.63
 IP.3 = 0.0.0.0

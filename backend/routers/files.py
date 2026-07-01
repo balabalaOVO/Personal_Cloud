@@ -166,7 +166,7 @@ async def create_download_token(
         "type": "download",
         "path": file_path,
         "iat": now,
-        "exp": now + 30,  # 30 seconds — enough to start the download
+        "exp": now + 60,  # 60 seconds — enough to start the download on mobile
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return {"token": token, "expires_in": 30}

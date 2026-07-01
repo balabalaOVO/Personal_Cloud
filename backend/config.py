@@ -21,7 +21,6 @@ BACKEND_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = BACKEND_DIR.parent
 DATA_DIR = BASE_DIR / "data"
 LOGS_DIR = BASE_DIR / "logs"
-CERT_DIR = BASE_DIR / "certs"
 DB_PATH = DATA_DIR / "clouddrive.db"
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 
@@ -33,12 +32,6 @@ HOST = os.getenv("CLOUD_DRIVE_HOST", "0.0.0.0")
 PORT = int(os.getenv("CLOUD_DRIVE_PORT", "8000"))
 # Base URL for external access (used in startup messages and status)
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
-
-# ---- SSL / HTTPS (mkcert local CA for mDNS) ----
-SSL_KEYFILE = CERT_DIR / "server.key"
-SSL_CERTFILE = CERT_DIR / "server.crt"
-# True if both cert files exist → serve HTTPS
-SSL_ENABLED = SSL_KEYFILE.is_file() and SSL_CERTFILE.is_file()
 
 # ---- Auth ----
 JWT_SECRET = os.getenv("CLOUD_DRIVE_JWT_SECRET", "CHANGE-ME-TO-A-RANDOM-SECRET-AT-LEAST-32-CHARS")

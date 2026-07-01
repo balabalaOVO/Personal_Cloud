@@ -192,7 +192,11 @@ def stop_mdns():
 
 
 def get_status() -> dict:
-    """Return current mDNS status for API and startup display."""
+    """Return current mDNS status for API and startup display.
+    Always re-detects LAN IP (IP may change between hotspot connections).
+    """
+    global _lan_ip
+    _lan_ip = get_lan_ip()
     return {
         "enabled": _mdns is not None,
         "lan_ip": _lan_ip,

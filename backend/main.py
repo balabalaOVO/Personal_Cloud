@@ -27,15 +27,14 @@ from starlette.responses import FileResponse
 
 from config import (
     DATA_DIR, HOST, PORT, FRONTEND_DIST,
-    DDNS_DOMAIN, DDNS_CHECK_INTERVAL, TMP_CLEANUP_INTERVAL,
+    DDNS_DOMAIN, TMP_CLEANUP_INTERVAL,
     ADMIN_USERNAME, ADMIN_PASSWORD,
-    SSL_ENABLED, SSL_KEYFILE, SSL_CERTFILE,
 )
 from models.database import init_db
 from routers.auth import router as auth_router
 from routers.files import router as files_router
-from routers.ddns import router as ddns_router
-from services.ddns_service import ddns_check_loop, get_public_ipv6, get_ddns_status
+from routers.messages import router as messages_router
+from services.ddns_service import get_public_ipv6, get_ddns_status
 from services.file_service import cleanup_tmp_files
 from services.mdns_service import start_mdns, stop_mdns, get_status as get_mdns_status
 
@@ -71,26 +70,22 @@ async def lifespan(app: FastAPI):
         print(f"           No public IPv6 — is phone hotspot connected?")
 
     # Start mDNS for LAN access
-    protocol = "https" if SSL_ENABLED else "http"
-    print(f"  [mDNS]    Registering clouddrive.local ({protocol}) on LAN...")
-    lan_ip = start_mdns(PORT, protocol=protocol)
+    lan_ip = start_mdns(PORT)
     print()
 
     # Print access URLs
     print(f"  ┌─────────────────────────────────────────────────────────┐")
-    print(f"  │  Local:          {protocol}://127.0.0.1:{PORT}                 │")
+    print(f"  │  Local:          http://127.0.0.1:{PORT}                 │")
     if lan_ip:
-        print(f"  │  LAN (mDNS):     {protocol}://clouddrive.local:{PORT}          │")
-        print(f"  │  LAN (direct):   {protocol}://{lan_ip}:{PORT}                  │")
+        print(f"  │  LAN (mDNS):     http://clouddrive.local:{PORT}          │")
+        print(f"  │  LAN (direct):   http://{lan_ip}:{PORT}                  │")
     if ipv6:
-        print(f"  │  Public (IPv6):  {protocol}://[{ipv6}]:{PORT}                  │")
+        print(f"  │  Public (IPv6):  http://[{ipv6}]:{PORT}                  │")
     if DDNS_DOMAIN:
-        print(f"  │  Public (domain): https://{DDNS_DOMAIN}                       │")
+        print(f"  │  Public (domain): https://{DDNS_DOMAIN}                 │")
     print(f"  │                                                         │")
-    print(f"  │  API Docs:        {protocol}://127.0.0.1:{PORT}/docs           │")
+    print(f"  │  API Docs:        http://127.0.0.1:{PORT}/docs           │")
     print(f"  │  Default login:   {ADMIN_USERNAME} / {ADMIN_PASSWORD}    │")
-    if SSL_ENABLED:
-        print(f"  │  SSL:             Local CA — install rootCA.pem on phone│")
     print(f"  └─────────────────────────────────────────────────────────┘")
     print()
 
@@ -103,17 +98,15 @@ async def lifespan(app: FastAPI):
     print()
 
     # Start background tasks
-    ddns_task = asyncio.create_task(ddns_check_loop())
     cleanup_task = asyncio.create_task(tmp_cleanup_loop())
 
     yield
 
     # ---- Shutdown ----
-    ddns_task.cancel()
     cleanup_task.cancel()
     stop_mdns()
     try:
-        await asyncio.gather(ddns_task, cleanup_task)
+        await asyncio.gather(cleanup_task)
     except asyncio.CancelledError:
         pass
     print("[Server] Shutdown complete")
@@ -137,21 +130,19 @@ app.add_middleware(
 # ---- API Routers ----
 app.include_router(auth_router)
 app.include_router(files_router)
-app.include_router(ddns_router)
+app.include_router(messages_router)
 
 
 @app.get("/api/health")
 async def health():
     """Public health check — no auth required."""
     ipv6 = get_public_ipv6()
-    protocol = "https" if SSL_ENABLED else "http"
     return {
         "status": "ok",
         "version": "1.0.0-mvp",
-        "ssl_enabled": SSL_ENABLED,
         "public_ipv6": ipv6,
         "domain": DDNS_DOMAIN,
-        "accessible_at": f"{protocol}://{DDNS_DOMAIN}:{PORT}" if ipv6 else None,
+        "accessible_at": f"http://{DDNS_DOMAIN}:{PORT}" if ipv6 else None,
     }
 
 
@@ -167,8 +158,7 @@ async def public_status():
         "server": "running",
         "bind_host": HOST,
         "bind_port": PORT,
-        "ssl_enabled": SSL_ENABLED,
-        "protocol": "https" if SSL_ENABLED else "http",
+        "protocol": mdns.get("protocol", "http"),
         "public_ipv6": ddns.get("ipv6"),
         "domain": DDNS_DOMAIN,
         "ddns": ddns,
@@ -210,7 +200,6 @@ if __name__ == "__main__":
 
     print("Starting AI Personal Cloud Drive...")
     print(f"Host: {HOST}  Port: {PORT}")
-    print(f"SSL: {'enabled' if SSL_ENABLED else 'disabled'}")
     print(f"Frontend: {'available' if FRONTEND_DIST.is_dir() else 'NOT BUILT'}")
 
     uvicorn.run(
@@ -219,6 +208,4 @@ if __name__ == "__main__":
         port=PORT,
         reload=True,
         server_header=False,
-        ssl_keyfile=str(SSL_KEYFILE) if SSL_ENABLED else None,
-        ssl_certfile=str(SSL_CERTFILE) if SSL_ENABLED else None,
     )

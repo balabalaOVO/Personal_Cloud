@@ -103,5 +103,14 @@ uploads/
 user_data/
 storage/
 
+# ===== 项目文档（仅本地使用） =====
+AI 个人云盘-简历亮点.md
+AI 个人云盘开发复盘文档.md
+SKILL.md
+
 # ===== 前端构建产物 =====
 frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# ===== 二进制工具（太大，不适合 git） =====
+tools/*.exe

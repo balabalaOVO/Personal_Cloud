@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './api/client'
 import LoginPage from './pages/LoginPage'
 import FilePage from './pages/FilePage'
+import MessagesPage from './pages/MessagesPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -28,6 +29,14 @@ export default function App() {
         element={
           <RequireAuth>
             <FilePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <RequireAuth>
+            <MessagesPage />
           </RequireAuth>
         }
       />

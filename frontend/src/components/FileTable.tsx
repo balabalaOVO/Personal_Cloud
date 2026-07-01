@@ -66,8 +66,9 @@ export default function FileTable({ files, loading, currentPath, onRefresh, onNa
     try {
       const token = await getDownloadToken(filePath)
       downloadFileDirect(filePath, item.name, token)
-    } catch {
-      message.error('下载失败')
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.message || '未知错误'
+      message.error(`下载失败: ${detail}`)
     }
   }
 

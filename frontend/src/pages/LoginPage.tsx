@@ -1,14 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Form, Input, Button, message, Typography } from 'antd'
-import { CloudOutlined, UserOutlined, LockOutlined } from '@ant-design/icons'
+import { Card, Form, Input, Button, message, Typography, Space, Tag } from 'antd'
+import { CloudOutlined, UserOutlined, LockOutlined, WifiOutlined, GlobalOutlined } from '@ant-design/icons'
+import axios from 'axios'
+import QRCode from 'qrcode'
 import { login } from '../api/auth'
 
 const { Title, Text } = Typography
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [lanUrl, setLanUrl] = useState<string>('')
+  const [domainUrl, setDomainUrl] = useState<string>('')
+  const [qrDataUrl, setQrDataUrl] = useState<string>('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    axios.get('/api/public-status').then((res) => {
+      const { mdns, bind_port, protocol, domain } = res.data
+      if (mdns?.lan_ip) {
+        const url = `http://${mdns.lan_ip}:${bind_port}`
+        setLanUrl(url)
+        // Generate QR code as base64 image
+        QRCode.toDataURL(url, { width: 200, margin: 1 }).then(setQrDataUrl).catch(() => {})
+      }
+      if (domain) {
+        setDomainUrl(`https://${domain}`)
+      }
+    }).catch(() => {})
+  }, [])
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true)
@@ -73,6 +93,49 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
         </Form>
+
+        {/* Network access info */}
+        {(lanUrl || domainUrl) && (
+          <div className="login-network-info">
+            {lanUrl && (
+              <div className="login-network-item">
+                <div className="login-lan-row">
+                  <div className="login-lan-info">
+                    <Space>
+                      <WifiOutlined style={{ color: '#52c41a' }} />
+                      <Tag color="green">高速</Tag>
+                    </Space>
+                    <Text copyable style={{ fontSize: 13 }}>
+                      {lanUrl}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      手机扫码或输入此地址，极速传输
+                    </Text>
+                  </div>
+                  {qrDataUrl && (
+                    <div className="login-qrcode">
+                      <img src={qrDataUrl} alt="手机扫码访问" width={100} height={100} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {domainUrl && (
+              <div className="login-network-item" style={{ marginTop: lanUrl ? 12 : 0 }}>
+                <Space>
+                  <GlobalOutlined style={{ color: '#1677ff' }} />
+                  <Tag color="blue">远程</Tag>
+                </Space>
+                <Text copyable style={{ fontSize: 13 }}>
+                  {domainUrl}
+                </Text>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  任何网络都能访问，速度受限于 Cloudflare
+                </Text>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   )
