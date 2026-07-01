@@ -102,7 +102,7 @@ data/
 uploads/
 user_data/
 storage/
-
+doc/
 # ===== 项目文档（仅本地使用） =====
 AI 个人云盘-简历亮点.md
 AI 个人云盘开发复盘文档.md
